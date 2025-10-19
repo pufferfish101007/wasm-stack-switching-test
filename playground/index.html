@@ -21,6 +21,7 @@
         }
 
         function tryModule(name, imports={}, testFunc) {
+            log(``);
             log(`compiling module ${name}`);
 
             return WebAssembly.compileStreaming(fetch(`./${name}.wasm`)).then((module) => {
@@ -34,13 +35,9 @@
                         log(`running test for module ${name}`);
                         testFunc(instance).then(() => {
                             log(`test PASSED for module ${name}`);
-                            log(``);
                         }).catch((_) => {
                             log(`test FAILED for module ${name}`);
-                            log(``);
                         })
-                    } else {
-                        log(``);
                     }
                 }).catch((err) => {
                     log(`an error occurred while trying to instantiate module ${name}`);
