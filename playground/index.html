@@ -23,7 +23,7 @@
         function tryModule(name, imports={}, testFunc) {
             log(`compiling module ${name}`);
 
-            return WebAssembly.compileStreaming(fetch(`/${name}.wasm`)).then((module) => {
+            return WebAssembly.compileStreaming(fetch(`./${name}.wasm`)).then((module) => {
                 log(`successfully compiled module ${name}`);
                 log(`instantiating ${name}`);
 
