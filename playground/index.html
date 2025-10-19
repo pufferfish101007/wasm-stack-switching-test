@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASM stack switching test</title>
+</head>
+
+<body>
+    <h1>WASM stack switching test</h1>
+
+    <main id="main"></main>
+
+    <script>
+        let main = document.getElementById("main");
+
+        function log(text) {
+            main.innerHTML += "<br>";
+            main.innerText += text;
+        }
+
+        function tryModule(name, imports={}, testFunc) {
+            log(`compiling module ${name}`);
+
+            return WebAssembly.compileStreaming(fetch(`/${name}.wasm`)).then((module) => {
+                log(`successfully compiled module ${name}`);
+                log(`instantiating ${name}`);
+
+                WebAssembly.instantiate(module, imports ?? {}).then((instance) => {
+                    log(`successfully instantiated module ${name}`);
+
+                    if (typeof testFunc === "function") {
+                        log(`running test for module ${name}`);
+                        testFunc(instance).then(() => {
+                            log(`test PASSED for module ${name}`);
+                            log(``);
+                        }).catch((_) => {
+                            log(`test FAILED for module ${name}`);
+                            log(``);
+                        })
+                    } else {
+                        log(``);
+                    }
+                }).catch((err) => {
+                    log(`an error occurred while trying to instantiate module ${name}`);
+                    log(err);
+                })
+            }).catch((err) => {
+                log(`an error occurred while trying to compile module ${name}`);
+                log(err);
+            });
+        }
+
+        const countingGeneratorArr = [];
+        const countingGeneratorImports = {
+            tests: {
+                log(n) {
+                    console.log(n)
+                    log(n);
+                    countingGeneratorArr.push(n);
+                }
+            }
+        }
+        const countingGeneratorTest = async (instance) => {
+            instance.exports.consumer();
+            if (!(countingGeneratorArr.every((n, i) => n === 10 - i) && countingGeneratorArr.length === 10)) {
+                throw new Error("test failed")
+            }
+        }
+
+        const tests = [
+            ["cont-type"],
+            ["cont_new"],
+            ["counting-generator", countingGeneratorImports, countingGeneratorTest]
+        ];
+
+        function runTests(index) {
+            if (index >= tests.length) return;
+            tryModule(...tests[index]).then(() => runTests(index + 1));
+        }
+
+        runTests(0);
+
+    </script>
+</body>
+
+</html>
